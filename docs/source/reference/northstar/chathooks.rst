@@ -1,9 +1,14 @@
 Chathooks
 =========
 
-In ``v1.6.0`` we are introducing a completely new chathook API.
-In this document, we provide the usage of this API.
-For an example of chathooks in use, check out EmmaM's `OwOfier mod <https://github.com/emma-miler/OwOfier/>`_
+This document provides usage of the Chathook API added in Northstar ``v1.6.0``.
+For an example of chathooks in use, check out EmmaM's `OwOfier mod <https://github.com/emma-miler/OwOfier/>`_.
+
+
+.. warning::
+	
+	Your mod needs to be load priority 1 or above to use the structs and callbacks in your script.
+
 
 Client chat API
 ---------------
@@ -27,6 +32,9 @@ The client chat callbacks allow you to intercept chat messages and modify or blo
     .. cpp:var:: entity player
 
         the player who sent the chat.
+    .. cpp:var:: string playerName
+    
+       the display name of the player who sent the chat.
     .. cpp:var:: bool isTeam
 
         whether this chat has a ``[TEAM]`` tag.
@@ -43,7 +51,7 @@ The client chat callbacks allow you to intercept chat messages and modify or blo
 
 .. _addcallback_onreceivedsaytextmessage:
 
-.. cpp:function:: _void AddCallback_OnReceivedSayTextMessage(callbackFunc)
+.. cpp:function:: void AddCallback_OnReceivedSayTextMessage(callbackFunc)
 
     Adds a callback that will be run when a chat message is received from the server. This will only be triggered for
     messages from players, not server messages.
@@ -53,7 +61,7 @@ The client chat callbacks allow you to intercept chat messages and modify or blo
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         ClClient_MessageStruct function MyChatFilter(ClClient_MessageStruct message)
         {
@@ -85,7 +93,7 @@ players, they only display them locally.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function OnGameStarted()
         {
@@ -99,7 +107,7 @@ players, they only display them locally.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
         
         void function InitialiseHEVSuit()
         {
@@ -109,6 +117,10 @@ players, they only display them locally.
             wait 1
             Chat_GameWriteLine("BIOMETRIC MONITORING SYSTEMS-")
             ActivateBiometricMonitoringSystems()
+            Chat_GameWrite("ACTIVATED")
+            wait 1
+            Chat_GameWriteLine("HAVE A VERY SAFE DAY.")
+        }
 
 .. cpp:function:: void Chat_NetworkWriteLine(string text)
 
@@ -116,7 +128,7 @@ players, they only display them locally.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function MyModInit()
         {
@@ -130,7 +142,7 @@ players, they only display them locally.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function OnButtonPressed()
         {
@@ -187,7 +199,7 @@ The server chat callbacks allow you to intercept incoming chat messages and modi
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         ClServer_MessageStruct function MyChatFilter(ClServer_MessageStruct message)
         {
@@ -224,7 +236,7 @@ With custom messages you can send chat messages at any time, to all players or t
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function OnSayRedCommand(entity player, string text)
         {
@@ -246,7 +258,7 @@ With custom messages you can send chat messages at any time, to all players or t
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function OnSendToFriendsCommand(entity fromPlayer, string text)
         {
@@ -258,17 +270,18 @@ With custom messages you can send chat messages at any time, to all players or t
         }
 
 
-.. cpp:function:: void Chat_ServerBroadcast(string text)
+.. cpp:function:: void Chat_ServerBroadcast(string text, bool withServerTag = true)
 
     Displays a server message to all players in the chat.
 
     **Parameters:**
 
     - ``string text`` - the contents of the chat message. Supports :ref:`ANSI escape codes <ansi_escape>` for colors.
+    - ``bool withServerTag`` - if true, ``[SERVER]`` will appear before the message in chat. Defaults to true.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function RestartServerThread()
         {
@@ -288,7 +301,7 @@ With custom messages you can send chat messages at any time, to all players or t
         }
 
 
-.. cpp:function:: void Chat_ServerPrivateMessage(entity toPlayer, string text, bool whisper)
+.. cpp:function:: void Chat_ServerPrivateMessage(entity toPlayer, string text, bool whisper, bool withServerTag = true)
 
     Sends a server message to a specific player in the chat.
 
@@ -297,16 +310,17 @@ With custom messages you can send chat messages at any time, to all players or t
     - ``entity toPlayer`` - the player that the message will be shown to.
     - ``string text`` - the contents of the chat message. Supports :ref:`ANSI escape codes <ansi_escape>` for colors.
     - ``bool whisper`` - if true, ``[WHISPER]`` will be displayed before the message to indicate the message is private.
+    - ``bool withServerTag`` - if true, ``[SERVER]`` will appear before the message in chat. Defaults to true.
 
     **Example:**
 
-    .. code-block:: javascript
+    .. code-block::
 
         void function OnBanCommand(entity player, array<string> args)
         {
             if (!PlayerIsModerator(player))
             {
-                Chat_ServerPrivateMessage(player, "You do not have the permissions to perform this command.", true)
+                Chat_ServerPrivateMessage(player, "You do not have the permissions to perform this command.", true, false)
                 return
             }
             
@@ -322,7 +336,7 @@ ANSI Escape Codes
 All messages support ANSI escape codes for customising text color. These are commands in strings that have special
 meaning. For example, the string:
 
-.. code-block::
+.. code-block:: text
 
     Hello world, \x1b[31mthis text is red\x1b[0m. And \x1b[34mthis text is blue\x1b[0m.
 
@@ -333,19 +347,23 @@ reference this will be referred to with ``ESC`` (e.g. setting red text is ``ESC[
 The following commands are available:
 
 
+.. list-table:: ANSI Codes
+
+ * - Codes
+   - Description
  * - ``ESC[0m`` and ``ESC[39m`` 
-   - reset text formatting
+   - Reset text formatting.
  * - ``ESC[30-37m``, ``ESC[90-97m`` 
-   - set to one of `the available color presets <https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit>`_.
+   - Set to one of `the available color presets <https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit>`_.
  * - ``ESC[38;5;Xm`` 
-   - set to one of `the available 8-bit colors <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>`_.
+   - Set to one of `the available 8-bit colors <https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit>`_.
  * - ``ESC[38;2;R;G;Bm`` 
-   - set to an RGB color, with ``R``, ``G`` and ``B`` in the range 0-255.
+   - Set to an RGB color, with ``R``, ``G`` and ``B`` in the range 0-255.
  * - ``ESC[110m`` 
-   - set to chat text color
+   - Set to chat text color.
  * - ``ESC[111m`` 
-   - set to friendly player name color
+   - Set to friendly player name color.
  * - ``ESC[112m`` 
-   - set to enemy player name color
+   - Set to enemy player name color.
  * - ``ESC[113m`` 
-   - set to network name color
+   - Set to network name color.
