@@ -46,5 +46,5 @@ jobs:
       - name: Build the sphinx documentation
         uses: rickstaa/sphinx-action@master
         with:
-          docs-folder: "./docs"
+          docs-folder: "./docs/source"
           build-command: "poetry run sphinx-build -b html . _build"
